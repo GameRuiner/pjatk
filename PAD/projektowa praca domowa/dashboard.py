@@ -1,20 +1,42 @@
 import streamlit as st
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
 
-st.title("Dashboard")
-st.header('Diamonds dataset - PAD final project')
+sns.set_style("darkgrid")
 
-df = pd.read_csv('cleaned_data.csv')
+st.title("Diamonds dashboard")
 
-# taking columns from modeling part
-# ['carat', 'clarity_I1', 'clarity_SI1', 'clarity_SI2', 'cut_Premium']
+
+@st.cache_data
+def read_data():
+  return pd.read_csv('cleaned_data.csv')
+
+
+df = read_data()
+
+with st.sidebar:
+  st.markdown("[Dataset](#dataset)")
+  st.markdown("[Features description](#features-description)")
+  st.markdown("[Histogram](#histogram)")
+  st.markdown("[Scatter plot](#scatter-plot)")
+  st.markdown("[Model](#model)")
+
+
+st.header('Dataset')
+st.dataframe(df, width=1000)
+
+st.header('Features description')
 st.subheader('Diamond Grading - Clarity Grades')
 st.markdown('The clarity of a diamond is determined by the number, location and type of inclusions it contains')
 st.markdown('The GIA (Gemological Institute of America) has designated that clarity of diamonds is graded under the following guidelines (some grades were omitted in dataset):')
 st.markdown('''**IF:**\n
 Absolutely free from internal faults under 10X magnification. May contain external features that should be so small that they can easily be removed by polishing''')
 st.markdown('''**VVS1:**\n
-Very, very small inclusions in the stone, very difficult to recognize under 10X magnification. These inclusions can not be in the field of the table''')
+Very, very small inclusions in the stone, very difficult to recognize under 10X magnisfication. These inclusions can not be in the field of the table''')
 st.markdown('''**VVS2:**\n
 Very, very small inclusions anywhere in the stone, only smallest external defects allowed''')
 st.markdown('''**SI1:**\n
@@ -48,4 +70,43 @@ st.markdown('Depth table was dropped due to hight corelation with carat')
 st.line_chart(df[['price', 'table']], x='price', y='table')
 st.markdown('No significant corelation between price and table')
 
-# add sidebar
+options = df.columns
+
+st.header('Histogram')
+st.subheader("Features distribution")
+feature = st.selectbox("Select distribution feature", options)
+fig = plt.figure()
+plt.hist(df[feature])
+plt.show()
+st.plotly_chart(fig)
+
+st.header("Scatter plot")
+st.subheader("Features relationship")
+feature = st.selectbox("Select feature", options)
+fig = plt.figure()
+plt.xlabel(feature.capitalize(), color='white')
+plt.ylabel("Price", color='white')
+plt.scatter(df[feature], df["price"])
+st.plotly_chart(fig)
+
+
+st.header('Model')
+if st.button('Train model'):
+  y = df.price
+  X = df.drop('price', axis=1)
+  X_dummies = pd.get_dummies(X)
+  st.text('Selected columns after forward feature selection')
+  st.text("'carat', 'clarity_I1', 'clarity_SI1', 'clarity_SI2', 'cut_Premium'")
+  selected_columns = ['carat', 'clarity_I1', 'clarity_SI1', 'clarity_SI2', 'cut_Premium']
+  X_train, X_test, y_train, y_test = train_test_split(X_dummies[selected_columns], y, test_size=0.33)
+  lr = LinearRegression()
+  lr.fit(X_train, y_train)
+  predicts = lr.predict(X_test)
+  r2=r2_score(y_test,predicts)
+  st.markdown(f"""
+  Linear Regression model with R^2 = {r2.round(2)}
+  """)
+  if r2 > 0.8:
+    st.success('Success')
+  else:
+    st.error('Failure')
