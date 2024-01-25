@@ -77,7 +77,6 @@ st.subheader("Features distribution")
 feature = st.selectbox("Select distribution feature", options)
 fig = plt.figure()
 plt.hist(df[feature])
-plt.show()
 st.plotly_chart(fig)
 
 st.header("Scatter plot")
@@ -104,9 +103,16 @@ if st.button('Train model'):
   predicts = lr.predict(X_test)
   r2=r2_score(y_test,predicts)
   st.markdown(f"""
-  Linear Regression model with R^2 = {r2.round(2)}
+  Test size is {X_test.shape[0]}. Model was built on {X_train.shape[0]} observations.
+  Result $R^2 = {r2.round(2)}$
   """)
   if r2 > 0.8:
     st.success('Success')
   else:
     st.error('Failure')
+  fig = plt.figure()
+  plt.xlabel("Carat", color='white')
+  plt.ylabel("Price", color='white')
+  plt.scatter(X_test.carat, y_test)
+  plt.scatter(X_test.carat, predicts)
+  st.plotly_chart(fig)
